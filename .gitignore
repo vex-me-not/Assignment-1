@@ -18,8 +18,4 @@
 !*.md
 # everything that is a txt
 !*.txt
-# everything that is a csv
-!*.csv
-# the pic with the formula for question 6
-!question6_formula_pic(part*
 # Add anything that you should be included but it's not
