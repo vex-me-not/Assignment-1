@@ -18,4 +18,5 @@
 !*.md
 # everything that is a txt
 !*.txt
+!*.py 
 # Add anything that you should be included but it's not
