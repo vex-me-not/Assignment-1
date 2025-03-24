@@ -8,6 +8,7 @@
 !*/
 
 # EXCEPT
+!*.csv
 # the .gitignore file
 !.gitignore
 # everything that is a jupyter notebook 
