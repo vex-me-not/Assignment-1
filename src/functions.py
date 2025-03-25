@@ -124,18 +124,18 @@ def plot_for_normality(data):
 def check_for_normality(data,name):
 
     stat, p = stats.shapiro(data)
-    print('Statistics=%.3f, p=%.3f' % (stat, p))
+    # print('Statistics=%.3f, p=%.3f' % (stat, p))
 
     # interpret
     if p > 0.05:
-        print(f'{name} Sample looks Gaussian (fail to reject H0)')
+        print(f'{name} Sample LOOKS Gaussian (fail to reject H0)')
         return 1
     else:
-        print(f'{name} Sample does not look Gaussian (reject H0)')
+        print(f'{name} Sample does NOT look Gaussian (reject H0)')
         return 0
 
 def rough_idea(data,name):
-    # print(f"--> {name} <--\n Mean:{np.mean(data)} \n Standard deviation: {np.std(data)}\n Max:{np.max(data)} \n Min:{np.min(data)}")
+    print(f"--> {name} <--\n Mean:{np.mean(data)} \n Standard deviation: {np.std(data)}\n Max:{np.max(data)} \n Min:{np.min(data)}")
     return (np.mean(data),np.std(data),np.max(data),np.min(data))
 
 def get_bacteria(df):
