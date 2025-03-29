@@ -6,6 +6,7 @@ import statsmodels.api as sm
 from sklearn.preprocessing import RobustScaler,PowerTransformer
 from sklearn.pipeline import Pipeline
 from scipy import stats
+import seaborn as sns
 
 def clean_data(data_df: pd.DataFrame):
     """
@@ -34,9 +35,9 @@ def clean_data(data_df: pd.DataFrame):
     bacteria_names=list(bacteria)
 
     # we scale the bacteria data
-    scaled_bacteria=scale_data(bacteria,bacteria_names)
+    # scaled_bacteria=scale_data(bacteria,bacteria_names)
 
-    frames=[bmi,age,sex_encoded,scaled_bacteria]
+    frames=[bmi,age,sex_encoded,bacteria]
 
     return frames
 
@@ -92,6 +93,7 @@ def scale_data(data_df: pd.DataFrame,names):
     scaled_data_df=scaled_data_df.reindex(sorted(scaled_data_df.columns),axis=1)
     
     return scaled_data_df
+
 
 
 def save_clean_data(frames,mode,data_path):
@@ -160,6 +162,8 @@ def print_dict(dict,mode=None):
             print(f"Max of {key} is {value}")
         elif mode=="Min":
             print(f"Min of {key} is {value}")
+        elif mode=="Corr":
+            print(f"Pearson's correlation of {key} and BMI is {value.statistic}")
         else:
             print(f"{key} --> {value}")
 
@@ -173,3 +177,16 @@ def find_normal(normality_dict):
         else:
             normal_columns.append(key)
     return [normal_columns,non_normal_columns]
+
+
+def remove_key(d:dict, key):
+    r = dict(d)
+    del r[key]
+    return r
+
+def plot_bact_corr(frames):
+    to_be_plotted=pd.concat(frames,axis=1)
+    corr_mat=to_be_plotted.corr()
+    
+    sns.heatmap(corr_mat,annot=True)
+    plt.show()
