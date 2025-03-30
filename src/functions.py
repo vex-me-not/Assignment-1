@@ -1,12 +1,128 @@
 
 import numpy as np
 import pandas as pd
+import sys
+import os
+import joblib
 import matplotlib.pyplot as plt
 import statsmodels.api as sm
+from pathlib import Path
 from sklearn.preprocessing import RobustScaler,PowerTransformer
 from sklearn.pipeline import Pipeline
 from scipy import stats
+from sklearn.linear_model import ElasticNet, BayesianRidge
+from sklearn.svm import SVR
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+from sklearn.utils import resample
 import seaborn as sns
+
+
+COLORS={
+            'BayesianRidge':'lightsalmon',
+            'ElasticeNet':'lightseagreen',
+            'SVR':'lightpink'
+}
+
+"""Classes used in training start here"""
+
+class DefaultPredictor:
+    def __init__(self):
+        self.models={
+            'BayesianRidge':BayesianRidge(),
+            'ElasticeNet':ElasticNet(),
+            'SVR':SVR()
+            }
+    
+    def train_models(self,x_train,y_train):
+        trained={}
+        
+        for name,model in self.models.items():
+            model.fit(x_train,y_train)
+            trained[name]=model
+        
+        return trained
+
+
+class Evaluator:
+    
+    def __init__(self,model,name="Dummy"):
+        self.model=model
+        self.name=name
+        self.metrics={
+            'RMSE':[],
+            'MAE':[],
+            'R2':[]
+        }
+        self.stats=None
+        self.ci=95 # confidence interval with alpha=0.05
+
+    def __compute_stats(self):
+        low=(100-self.ci)/2
+
+        return {
+            metric: {
+                'mean': np.mean(values),
+                'median': np.median(values),
+                f'CI_{self.ci}': (np.percentile(values, low),
+                                  np.percentile(values, 100 - low)),
+                'std': np.std(values)
+            }
+            for metric, values in self.metrics.items()
+        }
+
+    def evaluate(self,x,y,iters=500,random_state=42):
+        np.random.seed(random_state)
+        
+        for i in range(iters):
+            x_rs,y_rs = resample(x,y)
+            y_pred = self.model.predict(x_rs)
+            
+            self.metrics['RMSE'].append(np.sqrt(mean_squared_error(y_rs,y_pred)))
+            self.metrics['MAE'].append(mean_absolute_error(y_rs,y_pred))
+            self.metrics['R2'].append(r2_score(y_rs,y_pred))
+        
+        self.stats = self.__compute_stats()
+        
+    def report(self):
+        
+        if not self.stats:
+            raise ValueError("Must run evalute() first!")
+        
+        report=pd.DataFrame.from_dict(self.stats,orient='index')
+
+        report[['CIlow','CIhigh']]=pd.DataFrame(report[f'CI_{95}'].to_list(),index=report.index)
+
+        report=report.round(4)
+
+        to_be_returned=report[['mean','std','median','CIlow','CIhigh']]
+
+        return to_be_returned
+        
+class IO:
+    def __init__(self,models_dir):
+        if models_dir is None:
+            raise ValueError("Directory of models must be given!")
+
+        self.models_dir=Path(models_dir)
+        os.makedirs(self.models_dir,exist_ok=True)
+
+    def __gen_filename(self,name,suffix):
+        parts=[name]
+        if suffix:
+            parts.append(suffix)
+
+        return self.models_dir/f"{'_'.join(parts)}"
+        # return self.models_dir + '/' + f"{'_'.join(parts)}"
+    
+    def save(self,model,name,suf=''):
+        joblib.dump(model,self.__gen_filename(name,suffix=suf))
+
+    def load(self,name,suf=''):
+        return joblib.load(self.__gen_filename(name,suffix=suf))
+
+
+"""Helper functions start here"""
+
 
 def clean_data(data_df: pd.DataFrame):
     """
@@ -40,8 +156,6 @@ def clean_data(data_df: pd.DataFrame):
     frames=[bmi,age,sex_encoded,bacteria]
 
     return frames
-
-
 
 def remove_duplicates(data_df: pd.DataFrame):
     """
@@ -94,8 +208,6 @@ def scale_data(data_df: pd.DataFrame,names):
     
     return scaled_data_df
 
-
-
 def save_clean_data(frames,mode,data_path):
     """
     We use this function to save our newly cleaned data
@@ -122,7 +234,6 @@ def plot_for_normality(data):
     sm.qqplot(data, line='s')
     plt.show()
 
-
 def check_for_normality(data,name):
 
     stat, p = stats.shapiro(data)
@@ -140,9 +251,12 @@ def rough_idea(data,name):
     print(f"--> {name} <--\n Mean:{np.mean(data)} \n Standard deviation: {np.std(data)}\n Max:{np.max(data)} \n Min:{np.min(data)}")
     return (np.mean(data),np.std(data),np.max(data),np.min(data))
 
-def get_bacteria(df):
-        # we keep the bacteria only
-    to_drop=['Unnamed: 0', 'Project ID','Experiment type','Sex','Host age','Disease MESH ID','BMI']
+def get_bacteria(df,mode="explore"):
+    # we keep the bacteria only
+    if mode=="explore":
+        to_drop=['Unnamed: 0', 'Project ID','Experiment type','Sex','Host age','Disease MESH ID','BMI']
+    else:
+        to_drop=['Sex','Host age','BMI']
     bacteria=df.drop(labels=to_drop,axis=1)
     return bacteria
 
@@ -167,7 +281,6 @@ def print_dict(dict,mode=None):
         else:
             print(f"{key} --> {value}")
 
-
 def find_normal(normality_dict):
     normal_columns=[]
     non_normal_columns=[]
@@ -177,7 +290,6 @@ def find_normal(normality_dict):
         else:
             normal_columns.append(key)
     return [normal_columns,non_normal_columns]
-
 
 def remove_key(d:dict, key):
     r = dict(d)
