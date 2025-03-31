@@ -302,3 +302,33 @@ def plot_bact_corr(frames):
     
     sns.heatmap(corr_mat,annot=True)
     plt.show()
+
+def viz_comparison(*evals,figsize=(18,6)):
+    plt.figure(figsize=figsize)
+    
+    metrics={
+        'RMSE':[],
+        'MAE':[],
+        'R2':[]
+    }
+
+    labels=[ev.name for ev in evals]
+
+    for ev in evals:
+        metrics['RMSE'].append(ev.metrics['RMSE'])
+        metrics['MAE'].append(ev.metrics['MAE'])
+        metrics['R2'].append(ev.metrics['R2'])
+
+    for i, (name,values) in enumerate(metrics.items(),1):
+        plt.subplot(1,3,i)
+        boxplt=plt.boxplot(values,label=labels,patch_artist=True,widths=0.6)
+        
+        for box,lbl in zip(boxplt['boxes'],labels):
+            box.set_facecolor(COLORS.get(lbl,'gray'))
+        
+        plt.title(f"Comparison of method: {name}")
+        plt.ylabel("Score" if name=='R2' else 'Error Value')
+        plt.grid(True,alpha=0.3)
+    
+    plt.tight_layout()
+    plt.show()
