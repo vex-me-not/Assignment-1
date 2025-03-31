@@ -19,7 +19,7 @@ import seaborn as sns
 
 COLORS={
             'BayesianRidge':'lightsalmon',
-            'ElasticeNet':'lightseagreen',
+            'ElasticNet':'lightseagreen',
             'SVR':'lightpink'
 }
 
@@ -29,7 +29,7 @@ class DefaultPredictor:
     def __init__(self):
         self.models={
             'BayesianRidge':BayesianRidge(),
-            'ElasticeNet':ElasticNet(),
+            'ElasticNet':ElasticNet(),
             'SVR':SVR()
             }
     
@@ -321,7 +321,7 @@ def viz_comparison(*evals,figsize=(18,6)):
 
     for i, (name,values) in enumerate(metrics.items(),1):
         plt.subplot(1,3,i)
-        boxplt=plt.boxplot(values,label=labels,patch_artist=True,widths=0.6)
+        boxplt=plt.boxplot(values,labels=labels,patch_artist=True,widths=0.6)
         
         for box,lbl in zip(boxplt['boxes'],labels):
             box.set_facecolor(COLORS.get(lbl,'gray'))
