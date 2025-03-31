@@ -18,7 +18,7 @@ import seaborn as sns
 
 
 COLORS={
-            'BayesianRidge':'lightsalmon',
+            'BayesianRidge':'lightslategrey',
             'ElasticNet':'lightseagreen',
             'SVR':'lightpink'
 }
@@ -326,8 +326,8 @@ def viz_comparison(*evals,figsize=(18,6)):
         for box,lbl in zip(boxplt['boxes'],labels):
             box.set_facecolor(COLORS.get(lbl,'gray'))
         
-        plt.title(f"Comparison of method: {name}")
-        plt.ylabel("Score" if name=='R2' else 'Error Value')
+        plt.title(f"Comparison method: {name}")
+        plt.ylabel("Score" if name=='R2' else 'Value of Error')
         plt.grid(True,alpha=0.3)
     
     plt.tight_layout()
