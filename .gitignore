@@ -20,4 +20,5 @@
 # everything that is a txt
 !*.txt
 !*.py 
+!*.pkl
 # Add anything that you should be included but it's not

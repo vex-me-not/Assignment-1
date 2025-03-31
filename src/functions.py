@@ -111,7 +111,7 @@ class IO:
         if suffix:
             parts.append(suffix)
 
-        return self.models_dir/f"{'_'.join(parts)}"
+        return self.models_dir/f"{'_'.join(parts)}.pkl"
         # return self.models_dir + '/' + f"{'_'.join(parts)}"
     
     def save(self,model,name,suf=''):
