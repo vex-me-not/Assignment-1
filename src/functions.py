@@ -14,6 +14,7 @@ from sklearn.linear_model import ElasticNet, BayesianRidge
 from sklearn.svm import SVR
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.utils import resample
+from sklearn.model_selection import GridSearchCV
 import seaborn as sns
 
 
@@ -42,6 +43,42 @@ class DefaultPredictor:
         
         return trained
 
+class TunedPredictor(DefaultPredictor):
+    def __init__(self):
+        """Constructor for the fine tuned models"""
+        methods=["BayesianRidge","ElasticNet","SVR"]
+        for method in methods:
+            if method=="BayesianRidge":
+                rgrsr=BayesianRidge()
+                param={
+                    'alpha_1':[1e-5,1e-6,1e-7],
+                    'alpha_2':[1e-5,1e-6,1e-7],
+                    'lamda_1':[1e-5,1e-6,1e-7],
+                    'lamda_2':[1e-5,1e-6,1e-7]
+                }
+                tuned=GridSearchCV(rgrsr,param_grid=param,scoring='neg_root_mean_squared_error')
+                self.models['BayesianRidge']=tuned
+                continue
+            elif method=="ElasticNet":
+                rgrsr=ElasticNet()
+                param={
+                    'alpha': [0.01, 0.1, 1.0, 10.0],
+                    'l1_ratio': [0.1, 0.5, 0.9],
+                    'selection': ('cyclic','random')
+                }
+                tuned=GridSearchCV(rgrsr,param_grid=param,scoring='neg_root_mean_squared_error')
+                self.models['ElasticNet']=tuned
+                continue
+            else:
+                rgrsr=SVR()
+                param={
+                    'C': [0.1, 1, 10],
+                    'gamma': ['scale', 'auto'],
+                    'epsilon': [0.1, 0.2, 0.5]
+                }
+                tuned=GridSearchCV(rgrsr,param_grid=param,scoring='neg_root_mean_squared_error')
+                self.models['SVR']=tuned
+                continue
 
 class Evaluator:
     
