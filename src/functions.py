@@ -46,6 +46,7 @@ class DefaultPredictor:
 class TunedPredictor(DefaultPredictor):
     def __init__(self):
         """Constructor for the fine tuned models"""
+        DefaultPredictor.__init__(self)
         methods=["BayesianRidge","ElasticNet","SVR"]
         for method in methods:
             if method=="BayesianRidge":
@@ -53,8 +54,8 @@ class TunedPredictor(DefaultPredictor):
                 param={
                     'alpha_1':[1e-5,1e-6,1e-7],
                     'alpha_2':[1e-5,1e-6,1e-7],
-                    'lamda_1':[1e-5,1e-6,1e-7],
-                    'lamda_2':[1e-5,1e-6,1e-7]
+                    'lambda_1':[1e-5,1e-6,1e-7],
+                    'lambda_2':[1e-5,1e-6,1e-7]
                 }
                 tuned=GridSearchCV(rgrsr,param_grid=param,scoring='neg_root_mean_squared_error')
                 self.models['BayesianRidge']=tuned
@@ -79,6 +80,7 @@ class TunedPredictor(DefaultPredictor):
                 tuned=GridSearchCV(rgrsr,param_grid=param,scoring='neg_root_mean_squared_error')
                 self.models['SVR']=tuned
                 continue
+        
 
 class Evaluator:
     
