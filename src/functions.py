@@ -55,7 +55,8 @@ class TunedPredictor(DefaultPredictor):
                     'alpha_1':[1e-5,1e-6,1e-7],
                     'alpha_2':[1e-5,1e-6,1e-7],
                     'lambda_1':[1e-5,1e-6,1e-7],
-                    'lambda_2':[1e-5,1e-6,1e-7]
+                    'lambda_2':[1e-5,1e-6,1e-7],
+                    'lambda_init':[x / 10.0 for x in range(10, 20, 1)]
                 }
                 tuned=GridSearchCV(rgrsr,param_grid=param,scoring='neg_root_mean_squared_error')
                 self.models['BayesianRidge']=tuned
@@ -64,8 +65,10 @@ class TunedPredictor(DefaultPredictor):
                 rgrsr=ElasticNet()
                 param={
                     'alpha': [0.01, 0.1, 1.0, 10.0],
-                    'l1_ratio': [0.1, 0.5, 0.9],
-                    'selection': ('cyclic','random')
+                    'l1_ratio': [x / 10.0 for x in range(1, 10, 1)],
+                    'selection': ('cyclic','random'),
+                    'warm_start': (True,False),
+                    'positive': (True,False)
                 }
                 tuned=GridSearchCV(rgrsr,param_grid=param,scoring='neg_root_mean_squared_error')
                 self.models['ElasticNet']=tuned
@@ -73,9 +76,11 @@ class TunedPredictor(DefaultPredictor):
             else:
                 rgrsr=SVR()
                 param={
-                    'C': [0.1, 1, 10],
+                    'C': [x / 10.0 for x in range(1, 10, 1)],
                     'gamma': ['scale', 'auto'],
-                    'epsilon': [0.1, 0.2, 0.5]
+                    'epsilon': [x / 10.0 for x in range(1, 10, 1)],
+                    'kernel':['linear','rbf', 'sigmoid'],
+                    'shrinking': (True,False)
                 }
                 tuned=GridSearchCV(rgrsr,param_grid=param,scoring='neg_root_mean_squared_error')
                 self.models['SVR']=tuned
