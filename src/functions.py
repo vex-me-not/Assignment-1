@@ -56,33 +56,32 @@ class TunedPredictor(DefaultPredictor):
                     'alpha_2':[1e-5,1e-6,1e-7],
                     'lambda_1':[1e-5,1e-6,1e-7],
                     'lambda_2':[1e-5,1e-6,1e-7],
-                    'lambda_init':[x / 10.0 for x in range(10, 20, 1)]
+                    'lambda_init':[x / 10.0 for x in range(10, 21, 1)]
                 }
-                tuned=GridSearchCV(rgrsr,param_grid=param,scoring='neg_root_mean_squared_error')
+                tuned=GridSearchCV(rgrsr,param_grid=param,scoring='neg_root_mean_squared_error',cv=10)
                 self.models['BayesianRidge']=tuned
                 continue
             elif method=="ElasticNet":
                 rgrsr=ElasticNet()
                 param={
-                    'alpha': [0.01, 0.1, 1.0, 10.0],
-                    'l1_ratio': [x / 10.0 for x in range(1, 10, 1)],
+                    'alpha': [x / 10.0 for x in range(1, 11, 1)],
+                    'l1_ratio': [x / 10.0 for x in range(1, 11, 1)],
                     'selection': ('cyclic','random'),
                     'warm_start': (True,False),
                     'positive': (True,False)
                 }
-                tuned=GridSearchCV(rgrsr,param_grid=param,scoring='neg_root_mean_squared_error')
+                tuned=GridSearchCV(rgrsr,param_grid=param,scoring='neg_root_mean_squared_error',cv=10)
                 self.models['ElasticNet']=tuned
                 continue
             else:
                 rgrsr=SVR()
                 param={
-                    'C': [x / 10.0 for x in range(1, 10, 1)],
+                    'C': [x / 10.0 for x in range(1, 11, 1)],
                     'gamma': ['scale', 'auto'],
-                    'epsilon': [x / 10.0 for x in range(1, 10, 1)],
-                    'kernel':['linear','rbf', 'sigmoid'],
+                    'epsilon': [x / 10.0 for x in range(1, 11, 1)],
                     'shrinking': (True,False)
                 }
-                tuned=GridSearchCV(rgrsr,param_grid=param,scoring='neg_root_mean_squared_error')
+                tuned=GridSearchCV(rgrsr,param_grid=param,scoring='neg_root_mean_squared_error',cv=10)
                 self.models['SVR']=tuned
                 continue
         
