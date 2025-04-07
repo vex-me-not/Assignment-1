@@ -1,11 +1,12 @@
 
 import numpy as np
 import pandas as pd
-import sys
 import os
 import joblib
 import matplotlib.pyplot as plt
 import statsmodels.api as sm
+import seaborn as sns
+
 from pathlib import Path
 from sklearn.preprocessing import RobustScaler,PowerTransformer
 from sklearn.pipeline import Pipeline
@@ -15,9 +16,10 @@ from sklearn.svm import SVR
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.utils import resample
 from sklearn.model_selection import GridSearchCV
-import seaborn as sns
+from sklearn.base import BaseEstimator, TransformerMixin
 
 
+# a dictionairy used in boxplotting
 COLORS={
             'BayesianRidge':'lightslategrey',
             'ElasticNet':'lightseagreen',
@@ -27,6 +29,10 @@ COLORS={
 """Classes used in training start here"""
 
 class DefaultPredictor:
+    """
+    The DefaultPredictor used for training the three models (BayesianRidge,ElasticNet,SVR)
+    A superclass of TunedPredictor
+    """
     def __init__(self):
         self.models={
             'BayesianRidge':BayesianRidge(),
@@ -44,6 +50,11 @@ class DefaultPredictor:
         return trained
 
 class TunedPredictor(DefaultPredictor):
+    """
+    A subclass of the DefaultPredictor class. Its purpose is to finetune the models
+    Its main difference from the DefaultPredictor lies in the constructor, as this is where the finetuning takes place
+    Keep in mind that this only works for BayesianRidge,ElasticNet,SVR
+    """
     def __init__(self):
         """Constructor for the fine tuned models"""
         DefaultPredictor.__init__(self)
@@ -87,7 +98,10 @@ class TunedPredictor(DefaultPredictor):
         
 
 class Evaluator:
-    
+    """
+    This class evaluates the performance of a specific model in regards to RMSE,MAE,R2
+    Return a short report through the report function
+    """    
     def __init__(self,model,name="Dummy"):
         self.model=model
         self.name=name
@@ -140,8 +154,14 @@ class Evaluator:
         to_be_returned=report[['mean','std','median','CIlow','CIhigh']]
 
         return to_be_returned
-        
+
+     
 class IO:
+    """
+    This class implements the saving and the loading of the models. It needs a models directory in the constructor to work
+    So, each instance of IO class coresponds to one specific directory.
+    If you want to load or to save from another directory, you need to create a new instance
+    """
     def __init__(self,models_dir):
         if models_dir is None:
             raise ValueError("Directory of models must be given!")
@@ -155,14 +175,49 @@ class IO:
             parts.append(suffix)
 
         return self.models_dir/f"{'_'.join(parts)}.pkl"
-        # return self.models_dir + '/' + f"{'_'.join(parts)}"
     
+    # method that saves a model adding a suffix suf to its name
     def save(self,model,name,suf=''):
         joblib.dump(model,self.__gen_filename(name,suffix=suf))
 
+    # method
     def load(self,name,suf=''):
         return joblib.load(self.__gen_filename(name,suffix=suf))
 
+
+class Preprocessor(BaseEstimator,TransformerMixin):
+    """
+    This class is needed in order to perform the preprocessing part of the data exploration. That is the scaling and the transformation
+    along with keeping the neccesery columns for the prediction to work.
+    """
+
+    # The constructor of the class
+    def __init__(self):
+        self.pipeline=Pipeline([('scaler', RobustScaler()),  ('transformer', PowerTransformer(method='yeo-johnson'))])
+        self.to_drop=['Unnamed: 0', 'Project ID','Experiment type','Sex','Host age','Disease MESH ID']
+    
+    # the fit method needed for the pipeline. We keep the numerical columns and we save the ones we intend to scale
+    def fit(self,X,y=None):
+        num_cols=X.select_dtypes(include=np.number).columns
+        
+        to_scale= [col for col in num_cols if col not in self.to_drop]
+        self.scalable=to_scale
+        self.pipeline=self.pipeline.fit(X[self.scalable])
+        return self
+
+    # the transform method of the pipeline. We drop the columns not needed and we apply the scaler. We return the scaled X
+    def transform(self,X):
+        X=X.copy()
+
+        X=X.drop(columns=[col for col in self.to_drop if col in X.columns])
+        names=X.columns
+
+        scaled=self.pipeline.transform(X[self.scalable])
+        
+        scaled_data_df=pd.DataFrame(columns=names,data=scaled)
+        scaled_data_df=scaled_data_df.reindex(sorted(scaled_data_df.columns),axis=1)
+
+        return scaled_data_df
 
 """Helper functions start here"""
 
@@ -193,16 +248,13 @@ def clean_data(data_df: pd.DataFrame):
     # we get the bacteria names
     bacteria_names=list(bacteria)
 
-    # we scale the bacteria data
-    # scaled_bacteria=scale_data(bacteria,bacteria_names)
-
     frames=[bmi,age,sex_encoded,bacteria]
 
     return frames
 
 def remove_duplicates(data_df: pd.DataFrame):
     """
-    We use this function to any potential duplicates
+    We use this function to find and remove any potential duplicates
     """
     
     df=data_df
@@ -280,7 +332,6 @@ def plot_for_normality(data):
 def check_for_normality(data,name):
 
     stat, p = stats.shapiro(data)
-    # print('Statistics=%.3f, p=%.3f' % (stat, p))
 
     # interpret
     if p > 0.05:
